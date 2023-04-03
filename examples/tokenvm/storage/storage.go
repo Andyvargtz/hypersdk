@@ -46,6 +46,8 @@ const (
 	loanPrefix         = 0x3
 	incomingWarpPrefix = 0x4
 	outgoingWarpPrefix = 0x5
+	aliasPrefix        = 0x6
+	aliasOwnerPrefix   = 0x7
 )
 
 var (
@@ -486,4 +488,102 @@ func OutgoingWarpKeyPrefix(txID ids.ID) (k []byte) {
 	k[0] = outgoingWarpPrefix
 	copy(k[1:], txID[:])
 	return k
+}
+
+///////////////////////////////////////////////////////////////////
+///////////////// ALIAS STORAGE FUNCTIONS /////////////////////////
+///////////////////////////////////////////////////////////////////
+
+func PrefixAliasKey(pk crypto.PublicKey) (k []byte) {
+	k = make([]byte, 1+crypto.PublicKeyLen)
+	k[0] = aliasPrefix
+	copy(k[1:], pk[:])
+	return
+}
+
+func PrefixAliasOwnerKey(alias []byte) (k []byte) {
+	k = make([]byte, 1+len(alias))
+	k[0] = aliasOwnerPrefix
+	copy(k[1:], alias)
+	return
+}
+
+// pk -> Alias -> pk
+func SetAlias(ctx context.Context,
+	db chain.Database,
+	pk crypto.PublicKey,
+	alias []byte, // similar to metadata in assets
+	warp bool,
+) {
+
+	ClaimAlias(ctx, db, pk, alias, warp)
+	OwnAlias(ctx, db, pk, alias, warp)
+
+}
+
+// [pk]:[Alias]  k:v
+func ClaimAlias(
+	ctx context.Context,
+	db chain.Database,
+	pk crypto.PublicKey,
+	alias []byte, // similar to metadata in assets
+	warp bool,
+) error {
+	k := PrefixAliasKey(pk)
+	aliasLen := len(alias)
+	v := make([]byte, consts.Uint16Len+aliasLen+1)
+	binary.BigEndian.PutUint16(v, uint16(aliasLen))
+	copy(v[consts.Uint16Len:], alias)
+	b := byte(0x0)
+	if warp {
+		b = 0x1
+	}
+	v[consts.Uint16Len+aliasLen] = b
+	return db.Insert(ctx, k, v)
+}
+
+// We now need to create [alias]:[pk] to create single owners for each alias
+func OwnAlias(
+	ctx context.Context,
+	db chain.Database,
+	pk crypto.PublicKey,
+	alias []byte,
+	warp bool,
+) error {
+	k := PrefixAliasOwnerKey(alias)
+	v := make([]byte, crypto.PublicKeyLen+1)
+	copy(v[:], pk[:])
+	b := byte(0x0)
+	if warp {
+		b = 0x1
+	}
+	v[crypto.PublicKeyLen] = b
+	return db.Insert(ctx, k, v)
+}
+
+func GetAlias(ctx context.Context, db chain.Database, pk crypto.PublicKey) (bool, []byte, bool, error) {
+	k := PrefixAliasKey(pk)
+	v, err := db.GetValue(ctx, k)
+	return innerGetAlias(v, err)
+}
+
+func innerGetAlias(
+	v []byte,
+	err error,
+) (bool, []byte, bool, error) {
+	if errors.Is(err, database.ErrNotFound) {
+		return false, nil, false, nil
+	}
+	if err != nil {
+		return false, nil, false, err
+	}
+	aliasLen := binary.BigEndian.Uint16(v)
+	alias := v[consts.Uint16Len : consts.Uint16Len+aliasLen]
+	warp := v[consts.Uint16Len+aliasLen] == 0x1
+	return true, alias, warp, nil
+}
+
+func DeleteAlias(ctx context.Context, db chain.Database, pk crypto.PublicKey) error {
+	k := PrefixAliasKey(pk)
+	return db.Remove(ctx, k)
 }
