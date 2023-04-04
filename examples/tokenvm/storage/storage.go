@@ -508,21 +508,7 @@ func PrefixAliasOwnerKey(alias []byte) (k []byte) {
 	return
 }
 
-// // pk -> Alias -> pk
-// func SetAlias(
-// 	ctx context.Context,
-// 	db chain.Database,
-// 	pk crypto.PublicKey,
-// 	alias []byte, // similar to metadata in assets
-// 	warp bool,
-// ) {
-//
-// 	ClaimAlias(ctx, db, pk, alias, warp)
-// 	OwnAlias(ctx, db, pk, alias, warp)
-//
-// }
-
-// [pk]:[Alias]  k:v
+// Prefix+[pk]:Len(Alias)+[Alias]+Warp  k:v
 func SetAlias(
 	ctx context.Context,
 	db chain.Database,
@@ -544,6 +530,7 @@ func SetAlias(
 }
 
 // We now need to create [alias]:[pk] to create single owners for each alias
+// Prefix+[alias]:pk+Warp  k:v
 func OwnAlias(
 	ctx context.Context,
 	db chain.Database,
@@ -583,6 +570,31 @@ func innerGetAlias(
 	warp := v[consts.Uint16Len+aliasLen] == 0x1
 	return true, alias, warp, nil
 }
+
+func GetAddressFromAlias(ctx context.Context, db chain.Database, alias []bytes) (bool, pk crypto.PublicKey, bool, error) {
+	k := PrefixAliasOwnerKey(alias)
+	v, err := db.GetValue(ctx, k)
+	return innerGetAliasOwner(v, err)
+}
+
+func innerGetAliasOwner(
+	v []byte,
+	err error,
+) (bool, []byte, bool, error) {
+	if errors.Is(err, database.ErrNotFound) {
+		return false, nil, false, nil
+	}
+	if err != nil {
+		return false, nil, false, err
+	}
+	pk := v[:crypto.PublicKeyLen]
+	warp := v[crypto.PublicKeyLen] == 0x1
+	return true, pk, warp, nil
+}
+
+
+
+
 
 func DeleteAlias(ctx context.Context, db chain.Database, pk crypto.PublicKey) error {
 	k := PrefixAliasKey(pk)
