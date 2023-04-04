@@ -4,3 +4,4 @@
 package actions
 
 const MaxMetadataSize = 256
+const MaxAliasSize = 256
