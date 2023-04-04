@@ -193,6 +193,10 @@ func (c *Controller) Accepted(ctx context.Context, blk *chain.StatelessBlock) er
 				c.metrics.modifyAsset.Inc()
 			case *actions.Transfer:
 				c.metrics.transfer.Inc()
+			case *actions.TransferWithAlias:
+				c.metrics.transferWithAlias.Inc()
+			case *actions.ClaimAlias:
+				c.metrics.claimAlias.Inc()
 			case *actions.CreateOrder:
 				c.metrics.createOrder.Inc()
 				actor := auth.GetActor(tx.Auth)

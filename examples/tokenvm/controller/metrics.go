@@ -15,8 +15,10 @@ type metrics struct {
 	mintAsset   prometheus.Counter
 	burnAsset   prometheus.Counter
 	modifyAsset prometheus.Counter
+	claimAlias  prometheus.Counter
 
-	transfer prometheus.Counter
+	transfer          prometheus.Counter
+	transferWithAlias prometheus.Counter
 
 	createOrder prometheus.Counter
 	fillOrder   prometheus.Counter
@@ -78,6 +80,16 @@ func newMetrics(gatherer ametrics.MultiGatherer) (*metrics, error) {
 			Name:      "export_asset",
 			Help:      "number of export asset actions",
 		}),
+		transferWithAlias: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "actions",
+			Name:      "transfer_with_alias",
+			Help:      "number of transfer with alias actions",
+		}),
+		claimAlias: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "actions",
+			Name:      "claim_alias",
+			Help:      "number of claim alias actions",
+		}),
 	}
 	r := prometheus.NewRegistry()
 	errs := wrappers.Errs{}
@@ -86,8 +98,10 @@ func newMetrics(gatherer ametrics.MultiGatherer) (*metrics, error) {
 		r.Register(m.mintAsset),
 		r.Register(m.burnAsset),
 		r.Register(m.modifyAsset),
+		r.Register(m.claimAlias),
 
 		r.Register(m.transfer),
+		r.Register(m.transferWithAlias),
 
 		r.Register(m.createOrder),
 		r.Register(m.fillOrder),
