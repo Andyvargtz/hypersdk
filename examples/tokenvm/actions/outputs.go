@@ -21,6 +21,7 @@ var (
 	OutputInsufficientOutput     = []byte("insufficient output")
 	OutputValueMisaligned        = []byte("value is misaligned")
 	OutputMetadataTooLarge       = []byte("metadata is too large")
+	OutputAliasTooLarge          = []byte("alias name is too large")
 	OutputSameInOut              = []byte("same asset used for in and out")
 	OutputConflictingAsset       = []byte("warp has same asset as another")
 	OutputAnycast                = []byte("anycast output")
@@ -29,4 +30,5 @@ var (
 	OutputWrongDestination       = []byte("wrong destination")
 	OutputMustFill               = []byte("must fill request")
 	OutputWarpVerificationFailed = []byte("warp verification failed")
+	OutputAlreadyHasAlias        = []byte("user already has alias, try modifying alias")
 )
