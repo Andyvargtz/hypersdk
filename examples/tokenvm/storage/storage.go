@@ -508,21 +508,22 @@ func PrefixAliasOwnerKey(alias []byte) (k []byte) {
 	return
 }
 
-// pk -> Alias -> pk
-func SetAlias(ctx context.Context,
-	db chain.Database,
-	pk crypto.PublicKey,
-	alias []byte, // similar to metadata in assets
-	warp bool,
-) {
-
-	ClaimAlias(ctx, db, pk, alias, warp)
-	OwnAlias(ctx, db, pk, alias, warp)
-
-}
+// // pk -> Alias -> pk
+// func SetAlias(
+// 	ctx context.Context,
+// 	db chain.Database,
+// 	pk crypto.PublicKey,
+// 	alias []byte, // similar to metadata in assets
+// 	warp bool,
+// ) {
+//
+// 	ClaimAlias(ctx, db, pk, alias, warp)
+// 	OwnAlias(ctx, db, pk, alias, warp)
+//
+// }
 
 // [pk]:[Alias]  k:v
-func ClaimAlias(
+func SetAlias(
 	ctx context.Context,
 	db chain.Database,
 	pk crypto.PublicKey,
